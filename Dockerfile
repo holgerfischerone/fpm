@@ -10,20 +10,17 @@ ARG BASE_ENV=everything
 ARG TARGET=test
 
 # Container to throw an error if called with a bare `docker build .`
-FROM ubuntu:20.04 as error
-RUN <<EOF
-  printf '\n\n\n%s\n\n\n' "Hey! Use buildkit. See the Makefile or docs"
+FROM ubuntu:24.04 as error
+RUN   printf '\n\n\n%s\n\n\n' "Hey! Use buildkit. See the Makefile or docs" && \
   false
-EOF
 
 # Base container is used for various release and test things
-FROM ubuntu:20.04 as minimal-base
+FROM ubuntu:24.04 as minimal-base
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=Etc/UTC
 # Runtime deps. Build deps go in the build or test containers
 # hadolint ignore=DL3009
-RUN <<EOF
-  apt-get update
+RUN apt-get update && \
   apt-get install --no-install-recommends --no-install-suggests -y \
     'ruby=*' \
     'ruby-dev=*' \
@@ -39,30 +36,25 @@ RUN <<EOF
     'libc6-dev=*' \
     'make=*' \
     'lintian=*' \
-    'git=*'
+    'git=*' && \
     useradd -ms /bin/bash fpm
-EOF
 
 # everything container includes all the scripting languages. These
 # greatly embiggen the underlying docker container, so they're
 # conditionalized.
 FROM minimal-base as everything-base
-RUN <<EOF
-  apt-get install --no-install-recommends --no-install-suggests -y \
+RUN apt-get install --no-install-recommends --no-install-suggests -y \
     'cpanminus=*' \
     'npm=*' \
     'perl=*' \
-    'python3-pip=*'
-  pip3 --no-cache-dir install 'setuptools>=45' 'wheel>=0.34' 'virtualenv>=20' 'virtualenv-tools3>=2'
+    'python3-pip=*' && \
+  pip3 --no-cache-dir install --break-system-packages 'setuptools>=45' 'wheel>=0.34' 'virtualenv>=20' 'virtualenv-tools3>=2' && \
   update-alternatives --install /usr/bin/python python /usr/bin/python3 10
-EOF
 
 # hadolint ignore=DL3006
 FROM ${BASE_ENV}-base as base
-RUN <<EOF
-  rm -rf /var/lib/apt/lists/*
+RUN rm -rf /var/lib/apt/lists/* && \
   apt-get clean
-EOF
 
 # Run tests against the current working directory. This is a bit
 # orthogonal to the container release process, but it has a lot of
@@ -77,12 +69,9 @@ WORKDIR /origsrc
 ENV HOME=/origsrc
 ENV BUNDLE_PATH=/origsrc/.bundle
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN <<EOF
-  # Install a specific version of bundler
-  install -d -o fpm /origsrc
-  gem install -v "$(grep -A1 '^BUNDLED WITH' Gemfile.lock | tail -1)" bundler:*
+RUN install -d -o fpm /origsrc && \
+  gem install -v "$(grep -A1 '^BUNDLED WITH' Gemfile.lock | tail -1)" bundler:* && \
   bundle install
-EOF
 
 CMD ["bundle", "exec", "rspec"]
 

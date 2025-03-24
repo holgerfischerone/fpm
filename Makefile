@@ -62,12 +62,14 @@ release-prep:
 # The normal make target runs said image, mounting CWD against it.
 SECONDARY: .docker-test-minimal .docker-test-everything
 .docker-test-%: Gemfile.lock fpm.gemspec Dockerfile
-	DOCKER_BUILDKIT=1 docker build -t fpm-test-$*  --build-arg BASE_ENV=$* --build-arg TARGET=test .
+	#DOCKER_BUILDKIT=1 docker build -t fpm-test-$*  --build-arg BASE_ENV=$* --build-arg TARGET=test .
+	podman build -t fpm-test-$* --build-arg BASE_ENV=$* --build-arg TARGET=test --squash .
 	touch "$@"
 
 docker-test-%: .docker-test-%
 	docker run -v `pwd`:/src fpm-test-$*
 
 docker-release-%:
-	DOCKER_BUILDKIT=1 docker build -t fpm  --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
+	#DOCKER_BUILDKIT=1 docker build -t fpm  --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
+	podman build -t fpm --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
 
