@@ -57,19 +57,19 @@ release-prep:
 	rm -f docs/changelog_links.rst docs/cli-reference.rst
 	make -C docs changelog_links.rst cli-reference.rst package-type-cli
 
-# Testing in docker.
-# The dot file is a sentinal file that will built a docker image, and tag it.
+# Testing in podman.
+# The dot file is a sentinal file that will built a podman image, and tag it.
 # The normal make target runs said image, mounting CWD against it.
-SECONDARY: .docker-test-minimal .docker-test-everything
-.docker-test-%: Gemfile.lock fpm.gemspec Dockerfile
+SECONDARY: .podman-test-minimal .podman-test-everything
+.podman-test-%: Gemfile.lock fpm.gemspec Dockerfile
 	#DOCKER_BUILDKIT=1 docker build -t fpm-test-$*  --build-arg BASE_ENV=$* --build-arg TARGET=test .
 	podman build -t fpm-test-$* --build-arg BASE_ENV=$* --build-arg TARGET=test --squash .
 	touch "$@"
 
-docker-test-%: .docker-test-%
-	docker run -v `pwd`:/src fpm-test-$*
+podman-test-%: .podman-test-%
+	podman run -v `pwd`:/src fpm-test-$*
 
-docker-release-%:
+podman-release-%:
 	#DOCKER_BUILDKIT=1 docker build -t fpm  --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
 	podman build -t fpm --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
 
