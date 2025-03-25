@@ -71,5 +71,5 @@ podman-test-%: .podman-test-%
 
 podman-release-%:
 	#DOCKER_BUILDKIT=1 docker build -t fpm  --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
-	podman build -t fpm --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
+	podman build -t fpm-image --build-arg BASE_ENV=$* --build-arg TARGET=release --squash .
 
